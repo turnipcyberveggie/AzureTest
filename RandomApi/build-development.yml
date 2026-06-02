@@ -1,0 +1,36 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+  - task: UseDotNet@2
+    displayName: 'Install .NET SDK'
+    inputs:
+      packageType: 'sdk'
+      version: '10.x'
+
+  - script: dotnet restore
+    displayName: 'Restore packages'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+  - script: dotnet build RandomApi/RandomApi.csproj -c Development --no-restore
+    displayName: 'Build (Development)'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+  - task: DotNetCoreCLI@2
+    displayName: 'Publish (Development)'
+    inputs:
+      command: 'publish'
+      projects: 'RandomApi/RandomApi.csproj'
+      arguments: '-c Development --no-build --output $(Build.ArtifactStagingDirectory)'
+      publishWebProjects: false
+      zipAfterPublish: true
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Upload artifact'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'RandomApi-Development'
+      publishLocation: 'Container'
